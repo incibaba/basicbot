@@ -1,5 +1,6 @@
 from logging import FileHandler, StreamHandler, INFO, basicConfig, error as log_error, info as log_info
 from os import path as ospath, environ
+import os, contextlib, requests
 from subprocess import run as srun
 from requests import get as rget
 from dotenv import load_dotenv, dotenv_values
@@ -13,7 +14,34 @@ basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     handlers=[FileHandler('log.txt'), StreamHandler()],
                     level=INFO)
 
-load_dotenv('config.env', override=True)
+def get_config_from_url(configurl: str):
+    try:
+        if os.path.isfile('config.env'):
+            with contextlib.suppress(Exception):
+                os.remove('config.env')
+        if ' ' in configurl:
+            log_info("Detected gitlab snippet url. Example: 26265 sdg6-626-g6256")
+            
+            snipid, apikey = configurl.split(maxsplit=1)
+            main_api = f"https://gitlab.com/api/v4/snippets/{snipid}/raw"
+            headers = {'content-type': 'application/json', 'PRIVATE-TOKEN': apikey}
+            res = requests.get(main_api, headers=headers)
+        else:
+            res = requests.get(configurl)
+        if res.status_code == 200:
+            log_info("Config uzaktan alındı. Status 200.")
+            with open('config.env', 'wb+') as f:
+                f.write(res.content)
+            load_dotenv('config.env', override=True)
+        else:
+            log_error(f"Failed to download config.env {res.status_code}")
+    except Exception as e:
+        log_error(f"CONFIG_FILE_URL: {e}")
+
+if CONFIG_FILE_URL := os.environ.get('CONFIG_FILE_URL', None):
+    get_config_from_url(CONFIG_FILE_URL)
+else:
+    log_error("Lokal config.env will be used")
 
 try:
     if bool(environ.get('_____REMOVE_THIS_LINE_____')):
