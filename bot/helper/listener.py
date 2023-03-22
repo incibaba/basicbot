@@ -108,7 +108,7 @@ class MirrorLeechListener:
             async with download_dict_lock:
                 download_dict[self.uid] = ZipStatus(name, size, gid, self)
             LEECH_SPLIT_SIZE = user_dict.get('split_size', False) or config_dict['LEECH_SPLIT_SIZE']
-            cmd = ["7z", f"-v{LEECH_SPLIT_SIZE}b", "a", "-mx=0", f"-p{self.pswd}", path, m_path]
+            cmd = ["7z", f"-v{LEECH_SPLIT_SIZE}b", "a", "-mx=0", "-mmt=off", f"-p{self.pswd}", path, m_path]
             if self.isLeech and int(size) > LEECH_SPLIT_SIZE:
                 if self.pswd is None:
                     del cmd[4]
@@ -142,7 +142,7 @@ class MirrorLeechListener:
                             if is_first_archive_split(file_) or is_archive(file_) and not file_.endswith('.rar'):
                                 f_path = ospath.join(dirpath, file_)
                                 t_path = dirpath.replace(self.dir, self.newDir) if self.seed else dirpath
-                                cmd = ["7z", "x", f"-p{self.pswd}", f_path, f"-o{t_path}", "-aot", "-xr!@PaxHeader"]
+                                cmd = ["7z", "x", f"-p{self.pswd}", f_path, f"-o{t_path}", "-mmt=off", "-aot", "-xr!@PaxHeader"]
                                 if self.pswd is None:
                                     del cmd[2]
                                 self.suproc = await create_subprocess_exec(*cmd)
@@ -163,7 +163,7 @@ class MirrorLeechListener:
                     if self.seed and self.isLeech:
                         self.newDir = f"{self.dir}10000"
                         path = path.replace(self.dir, self.newDir)
-                    cmd = ["7z", "x", f"-p{self.pswd}", m_path, f"-o{path}", "-aot", "-xr!@PaxHeader"]
+                    cmd = ["7z", "x", f"-p{self.pswd}", m_path, f"-o{path}", "-mmt=off", "-aot", "-xr!@PaxHeader"]
                     if self.pswd is None:
                         del cmd[2]
                     self.suproc = await create_subprocess_exec(*cmd)
